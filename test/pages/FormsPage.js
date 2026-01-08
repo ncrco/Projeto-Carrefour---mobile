@@ -1,128 +1,167 @@
 const { $ } = require('@wdio/globals');
+const BasePage = require('../utils/BasePage');
+const SELECTORS = require('../config/selectors');
+const CONSTANTS = require('../config/constants');
 
-class FormsPage {
-    // Elementos da página de formulários
+class FormsPage extends BasePage {
+    // Elementos da página de formulários - parametrizados
     get inputText() {
-        return $('~textInput');
+        return $(SELECTORS.FORMS.TEXT_INPUT);
     }
 
     get switchToggle() {
-        return $('~switch');
+        return $(SELECTORS.FORMS.SWITCH_TOGGLE);
     }
 
     get dropdown() {
-        return $('~dropdown');
+        return $(SELECTORS.FORMS.DROPDOWN);
     }
 
     get btnActive() {
-        return $('~activeButton');
+        return $(SELECTORS.FORMS.ACTIVE_BUTTON);
     }
 
     get btnInactive() {
-        return $('~inactiveButton');
+        return $(SELECTORS.FORMS.INACTIVE_BUTTON);
     }
 
     get btnSubmit() {
-        return $('~submitButton');
+        return $(SELECTORS.FORMS.SUBMIT_BUTTON);
     }
 
     get errorMessage() {
-        return $('~formErrorMessage');
+        return $(SELECTORS.FORMS.ERROR_MESSAGE);
     }
 
     get successMessage() {
-        return $('~formSuccessMessage');
+        return $(SELECTORS.FORMS.SUCCESS_MESSAGE);
     }
 
     get btnBack() {
-        return $('~backButton');
+        return $(SELECTORS.FORMS.BACK_BUTTON);
     }
 
-    // Métodos de ação
+    // Métodos de ação - usando métodos da classe base
     async enterText(text) {
-        await this.inputText.waitForDisplayed({ timeout: 5000 });
-        await this.inputText.setValue(text);
+        if (text === null || text === undefined) {
+            throw new Error('Texto não pode ser null ou undefined');
+        }
+        await this.setValue(this.inputText, text);
     }
 
     async toggleSwitch() {
-        await this.switchToggle.waitForDisplayed({ timeout: 5000 });
-        await this.switchToggle.click();
+        await this.clickElement(this.switchToggle);
+        await this.wait(CONSTANTS.TIMEOUTS.SHORT); // Aguarda animação
     }
 
+    /**
+     * Verifica se o switch está ligado
+     * @returns {Promise<boolean>}
+     */
     async isSwitchOn() {
-        const value = await this.switchToggle.getAttribute('checked');
-        return value === 'true';
+        try {
+            const value = await this.switchToggle.getAttribute('checked');
+            return value === 'true' || value === true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    /**
+     * Define o estado do switch
+     * @param {boolean} desiredState - Estado desejado (true = ligado, false = desligado)
+     */
+    async setSwitchState(desiredState) {
+        const currentState = await this.isSwitchOn();
+        if (currentState !== desiredState) {
+            await this.toggleSwitch();
+        }
     }
 
     async selectDropdownOption(option) {
-        await this.dropdown.waitForDisplayed({ timeout: 5000 });
-        await this.dropdown.click();
+        if (!option) {
+            throw new Error('Opção do dropdown não pode ser vazia');
+        }
+        await this.clickElement(this.dropdown);
+        await this.wait(CONSTANTS.TIMEOUTS.SHORT);
+        
         const optionElement = await $(`~${option}`);
-        await optionElement.waitForDisplayed({ timeout: 3000 });
-        await optionElement.click();
+        await this.clickElement(optionElement, CONSTANTS.TIMEOUTS.SHORT);
     }
 
     async clickActiveButton() {
-        await this.btnActive.waitForDisplayed({ timeout: 5000 });
-        await this.btnActive.click();
+        await this.clickElement(this.btnActive);
     }
 
     async clickInactiveButton() {
-        await this.btnInactive.waitForDisplayed({ timeout: 5000 });
-        // Botão inativo não deve ser clicável, mas vamos tentar
-        try {
-            await this.btnInactive.click();
-        } catch (error) {
-            // Esperado que falhe
+        // Botão inativo não deve ser clicável
+        const isClickable = await this.waitForClickable(this.btnInactive, CONSTANTS.TIMEOUTS.SHORT);
+        if (isClickable) {
+            await this.clickElement(this.btnInactive);
         }
     }
 
     async clickSubmit() {
-        await this.btnSubmit.waitForDisplayed({ timeout: 5000 });
-        await this.btnSubmit.click();
+        await this.clickElement(this.btnSubmit);
+        await this.wait(CONSTANTS.TIMEOUTS.SHORT); // Aguarda processamento
     }
 
     async clickBack() {
-        await this.btnBack.waitForDisplayed({ timeout: 5000 });
-        await this.btnBack.click();
+        await this.clickElement(this.btnBack);
     }
 
-    async isErrorMessageDisplayed() {
-        try {
-            await this.errorMessage.waitForDisplayed({ timeout: 3000 });
-            return await this.errorMessage.isDisplayed();
-        } catch (error) {
-            return false;
-        }
+    /**
+     * Verifica se mensagem de erro está exibida
+     * @param {number} timeout - Timeout opcional
+     * @returns {Promise<boolean>}
+     */
+    async isErrorMessageDisplayed(timeout = CONSTANTS.TIMEOUTS.SHORT) {
+        return await this.isElementDisplayed(this.errorMessage, timeout);
     }
 
+    /**
+     * Obtém texto da mensagem de erro
+     * @returns {Promise<string>}
+     */
     async getErrorMessageText() {
-        if (await this.isErrorMessageDisplayed()) {
-            return await this.errorMessage.getText();
-        }
-        return '';
+        return await this.getText(this.errorMessage);
     }
 
-    async isSuccessMessageDisplayed() {
-        try {
-            await this.successMessage.waitForDisplayed({ timeout: 3000 });
-            return await this.successMessage.isDisplayed();
-        } catch (error) {
-            return false;
-        }
+    /**
+     * Verifica se mensagem de sucesso está exibida
+     * @param {number} timeout - Timeout opcional
+     * @returns {Promise<boolean>}
+     */
+    async isSuccessMessageDisplayed(timeout = CONSTANTS.TIMEOUTS.SHORT) {
+        return await this.isElementDisplayed(this.successMessage, timeout);
     }
 
-    async fillForm(text, switchValue, dropdownOption) {
-        await this.enterText(text);
-        const currentSwitchState = await this.isSwitchOn();
-        if (currentSwitchState !== switchValue) {
-            await this.toggleSwitch();
+    /**
+     * Preenche formulário completo
+     * @param {string} text - Texto do input
+     * @param {boolean} switchValue - Estado do switch
+     * @param {string} dropdownOption - Opção do dropdown (opcional)
+     */
+    async fillForm(text, switchValue, dropdownOption = null) {
+        if (text) {
+            await this.enterText(text);
         }
+        
+        await this.setSwitchState(switchValue);
+        
         if (dropdownOption) {
             await this.selectDropdownOption(dropdownOption);
         }
     }
+
+    /**
+     * Valida formulário antes de submeter
+     * @param {string} text - Texto do input
+     * @returns {boolean} True se válido
+     */
+    isFormValid(text) {
+        return text && text.trim() !== '';
+    }
 }
 
 module.exports = new FormsPage();
-

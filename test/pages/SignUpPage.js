@@ -1,93 +1,128 @@
 const { $ } = require('@wdio/globals');
+const BasePage = require('../utils/BasePage');
+const SELECTORS = require('../config/selectors');
+const CONSTANTS = require('../config/constants');
 
-class SignUpPage {
-    // Elementos da página de cadastro
+class SignUpPage extends BasePage {
+    // Elementos da página de cadastro - parametrizados
     get inputUsername() {
-        return $('~signUpUsername');
+        return $(SELECTORS.SIGNUP.USERNAME_INPUT);
     }
 
     get inputPassword() {
-        return $('~signUpPassword');
+        return $(SELECTORS.SIGNUP.PASSWORD_INPUT);
     }
 
     get inputConfirmPassword() {
-        return $('~signUpConfirmPassword');
+        return $(SELECTORS.SIGNUP.CONFIRM_PASSWORD_INPUT);
     }
 
     get btnSignUp() {
-        return $('~signUpButton');
+        return $(SELECTORS.SIGNUP.SIGNUP_BUTTON);
     }
 
     get btnBack() {
-        return $('~backButton');
+        return $(SELECTORS.SIGNUP.BACK_BUTTON);
     }
 
     get errorMessage() {
-        return $('~signUpErrorMessage');
+        return $(SELECTORS.SIGNUP.ERROR_MESSAGE);
     }
 
     get successMessage() {
-        return $('~signUpSuccessMessage');
+        return $(SELECTORS.SIGNUP.SUCCESS_MESSAGE);
     }
 
-    // Métodos de ação
+    // Métodos de ação - usando métodos da classe base
     async enterUsername(username) {
-        await this.inputUsername.waitForDisplayed({ timeout: 5000 });
-        await this.inputUsername.setValue(username);
+        if (!username || username.trim() === '') {
+            throw new Error('Username não pode ser vazio');
+        }
+        await this.setValue(this.inputUsername, username);
     }
 
     async enterPassword(password) {
-        await this.inputPassword.waitForDisplayed({ timeout: 5000 });
-        await this.inputPassword.setValue(password);
+        if (!password || password.trim() === '') {
+            throw new Error('Password não pode ser vazio');
+        }
+        await this.setValue(this.inputPassword, password);
     }
 
     async enterConfirmPassword(password) {
-        await this.inputConfirmPassword.waitForDisplayed({ timeout: 5000 });
-        await this.inputConfirmPassword.setValue(password);
+        if (!password || password.trim() === '') {
+            throw new Error('Confirm password não pode ser vazio');
+        }
+        await this.setValue(this.inputConfirmPassword, password);
     }
 
     async clickSignUp() {
-        await this.btnSignUp.waitForDisplayed({ timeout: 5000 });
-        await this.btnSignUp.click();
+        await this.clickElement(this.btnSignUp);
     }
 
     async clickBack() {
-        await this.btnBack.waitForDisplayed({ timeout: 5000 });
-        await this.btnBack.click();
+        await this.clickElement(this.btnBack);
     }
 
+    /**
+     * Realiza cadastro completo
+     * @param {string} username - Nome de usuário
+     * @param {string} password - Senha
+     * @param {string} confirmPassword - Confirmação de senha
+     */
     async signUp(username, password, confirmPassword) {
         await this.enterUsername(username);
         await this.enterPassword(password);
         await this.enterConfirmPassword(confirmPassword);
         await this.clickSignUp();
+        await this.wait(CONSTANTS.TIMEOUTS.SHORT); // Aguarda processamento
     }
 
-    async isErrorMessageDisplayed() {
-        try {
-            await this.errorMessage.waitForDisplayed({ timeout: 3000 });
-            return await this.errorMessage.isDisplayed();
-        } catch (error) {
-            return false;
-        }
+    /**
+     * Verifica se mensagem de erro está exibida
+     * @param {number} timeout - Timeout opcional
+     * @returns {Promise<boolean>}
+     */
+    async isErrorMessageDisplayed(timeout = CONSTANTS.TIMEOUTS.SHORT) {
+        return await this.isElementDisplayed(this.errorMessage, timeout);
     }
 
+    /**
+     * Obtém texto da mensagem de erro
+     * @returns {Promise<string>}
+     */
     async getErrorMessageText() {
-        if (await this.isErrorMessageDisplayed()) {
-            return await this.errorMessage.getText();
-        }
-        return '';
+        return await this.getText(this.errorMessage);
     }
 
-    async isSuccessMessageDisplayed() {
-        try {
-            await this.successMessage.waitForDisplayed({ timeout: 3000 });
-            return await this.successMessage.isDisplayed();
-        } catch (error) {
-            return false;
-        }
+    /**
+     * Verifica se mensagem de erro contém palavras-chave esperadas
+     * @param {string[]} expectedKeywords - Palavras-chave esperadas
+     * @returns {Promise<boolean>}
+     */
+    async verifyErrorMessage(expectedKeywords) {
+        const errorText = await this.getErrorMessageText();
+        if (!errorText) return false;
+        return this.containsKeywords(errorText, expectedKeywords);
+    }
+
+    /**
+     * Verifica se mensagem de sucesso está exibida
+     * @param {number} timeout - Timeout opcional
+     * @returns {Promise<boolean>}
+     */
+    async isSuccessMessageDisplayed(timeout = CONSTANTS.TIMEOUTS.SHORT) {
+        return await this.isElementDisplayed(this.successMessage, timeout);
+    }
+
+    /**
+     * Verifica se senhas coincidem
+     * @param {string} password - Senha
+     * @param {string} confirmPassword - Confirmação de senha
+     * @returns {boolean}
+     */
+    passwordsMatch(password, confirmPassword) {
+        return password === confirmPassword;
     }
 }
 
 module.exports = new SignUpPage();
-

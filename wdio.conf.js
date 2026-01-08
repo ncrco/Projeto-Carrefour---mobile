@@ -1,8 +1,13 @@
-const { config } = require('@wdio/globals')
+const { config } = require('@wdio/globals');
+
+// Configurações parametrizadas do ambiente
+const CONSTANTS = require('./test/config/constants');
+const APPIUM_PORT = CONSTANTS.ENV_CONFIG.APPIUM_PORT;
+const APPIUM_HOST = CONSTANTS.ENV_CONFIG.APPIUM_HOST;
 
 exports.config = {
     runner: 'local',
-    port: 4723,
+    port: APPIUM_PORT,
     path: '/',
     
     specs: [
@@ -14,11 +19,13 @@ exports.config = {
     maxInstances: 1,
     
     capabilities: [{
-        platformName: 'Android',
-        'appium:platformVersion': '11.0',
-        'appium:deviceName': 'Android Emulator',
-        'appium:app': './apps/native-demo-app.apk',
-        'appium:automationName': 'UiAutomator2',
+        platformName: CONSTANTS.ENV_CONFIG.PLATFORM === 'ios' ? 'iOS' : 'Android',
+        'appium:platformVersion': CONSTANTS.ENV_CONFIG.PLATFORM_VERSION,
+        'appium:deviceName': CONSTANTS.ENV_CONFIG.DEVICE_NAME,
+        'appium:app': CONSTANTS.ENV_CONFIG.PLATFORM === 'ios' 
+            ? CONSTANTS.APP_CONFIG.IOS_APP_PATH 
+            : CONSTANTS.APP_CONFIG.ANDROID_APP_PATH,
+        'appium:automationName': CONSTANTS.ENV_CONFIG.PLATFORM === 'ios' ? 'XCUITest' : 'UiAutomator2',
         'appium:noReset': false,
         'appium:fullReset': false,
         'appium:newCommandTimeout': 300
@@ -30,7 +37,7 @@ exports.config = {
     
     baseUrl: '',
     
-    waitforTimeout: 10000,
+    waitforTimeout: CONSTANTS.TIMEOUTS.PAGE_LOAD,
     
     connectionRetryTimeout: 120000,
     
@@ -43,7 +50,7 @@ exports.config = {
     reporters: [
         'spec',
         ['allure', {
-            outputDir: 'allure-results',
+            outputDir: CONSTANTS.TEST_CONFIG.ALLURE_RESULTS_PATH,
             disableWebdriverStepsReporting: true,
             disableWebdriverScreenshotsReporting: false,
         }]
@@ -62,14 +69,17 @@ exports.config = {
     },
     
     afterTest: async function (test, context, { error, result, duration, passed, retries }) {
-        if (!passed) {
-            await driver.saveScreenshot(`./screenshots/${test.title.replace(/\s+/g, '_')}_${Date.now()}.png`);
+        if (CONSTANTS.TEST_CONFIG.SCREENSHOT_ON_FAILURE && !passed) {
+            const screenshotName = test.title.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+            const screenshotPath = `${CONSTANTS.TEST_CONFIG.SCREENSHOT_PATH}/${screenshotName}_${Date.now()}.${CONSTANTS.REPORT_CONFIG.SCREENSHOT_FORMAT}`;
+            await driver.saveScreenshot(screenshotPath);
         }
     },
     
     afterSuite: async function (suite) {
-        if (suite.error) {
-            await driver.saveScreenshot(`./screenshots/suite_error_${Date.now()}.png`);
+        if (suite.error && CONSTANTS.TEST_CONFIG.SCREENSHOT_ON_FAILURE) {
+            const screenshotPath = `${CONSTANTS.TEST_CONFIG.SCREENSHOT_PATH}/suite_error_${Date.now()}.${CONSTANTS.REPORT_CONFIG.SCREENSHOT_FORMAT}`;
+            await driver.saveScreenshot(screenshotPath);
         }
     }
 }
