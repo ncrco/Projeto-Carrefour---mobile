@@ -1,0 +1,41 @@
+{
+  "name": "webdriverio-native-demo-automation",
+  "version": "1.0.0",
+  "description": "Automação de testes mobile para native-demo-app usando WebDriverIO e Appium",
+  "main": "index.js",
+  "scripts": {
+    "test": "wdio run wdio.conf.js",
+    "test:android": "wdio run wdio.android.conf.js",
+    "test:ios": "wdio run wdio.ios.conf.js",
+    "test:browserstack": "wdio run wdio.browserstack.conf.js",
+    "allure:generate": "allure generate allure-results --clean",
+    "allure:open": "allure open allure-report",
+    "allure:serve": "allure serve allure-results"
+  },
+  "keywords": [
+    "webdriverio",
+    "appium",
+    "mobile",
+    "automation",
+    "testing"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@wdio/cli": "^8.24.0",
+    "@wdio/local-runner": "^8.24.0",
+    "@wdio/mocha-framework": "^8.24.0",
+    "@wdio/spec-reporter": "^8.24.0",
+    "@wdio/appium-service": "^8.24.0",
+    "@wdio/allure-reporter": "^8.24.0",
+    "@wdio/globals": "^8.24.0",
+    "@wdio/browserstack-service": "^8.24.0",
+    "appium": "^2.2.1",
+    "chai": "^4.3.10",
+    "wdio-chromedriver-service": "^8.1.1"
+  },
+  "dependencies": {
+    "csv-parse": "^5.5.3"
+  }
+}
+

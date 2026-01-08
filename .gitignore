@@ -1,0 +1,12 @@
+node_modules/
+allure-results/
+allure-report/
+screenshots/
+logs/
+*.log
+.DS_Store
+.env
+.vscode/
+.idea/
+*.iml
+

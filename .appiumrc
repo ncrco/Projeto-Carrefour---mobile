@@ -1,0 +1,10 @@
+{
+  "server": {
+    "port": 4723,
+    "host": "localhost"
+  },
+  "log": {
+    "level": "info"
+  }
+}
+

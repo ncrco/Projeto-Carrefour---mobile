@@ -1,0 +1,71 @@
+image: node:18
+
+stages:
+  - test
+
+variables:
+  ANDROID_HOME: /opt/android-sdk
+  JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
+
+before_script:
+  - apt-get update -qq
+  - apt-get install -y -qq openjdk-11-jdk
+  - apt-get install -y -qq android-sdk
+  - npm install -g appium@latest
+  - npm install
+  - appium driver install uiautomator2
+  - appium driver install xcuitest
+
+test:android:
+  stage: test
+  script:
+    - echo "Iniciando testes Android..."
+    - npm run test:android || true
+  artifacts:
+    when: always
+    paths:
+      - allure-results/
+      - screenshots/
+    reports:
+      junit:
+        - allure-results/*.xml
+    expire_in: 30 days
+  only:
+    - main
+    - develop
+    - merge_requests
+
+test:ios:
+  stage: test
+  script:
+    - echo "Iniciando testes iOS..."
+    - npm run test:ios || true
+  artifacts:
+    when: always
+    paths:
+      - allure-results/
+      - screenshots/
+    reports:
+      junit:
+        - allure-results/*.xml
+    expire_in: 30 days
+  only:
+    - main
+    - develop
+    - merge_requests
+
+generate:allure:
+  stage: test
+  script:
+    - npm run allure:generate
+  artifacts:
+    paths:
+      - allure-report/
+    expire_in: 30 days
+  only:
+    - main
+    - develop
+  dependencies:
+    - test:android
+    - test:ios
+

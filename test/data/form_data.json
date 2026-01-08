@@ -1,0 +1,27 @@
+[
+    {
+        "text": "Test Input Text",
+        "switchValue": true,
+        "dropdownOption": "option1",
+        "expectedResult": "success"
+    },
+    {
+        "text": "Another Test",
+        "switchValue": false,
+        "dropdownOption": "option2",
+        "expectedResult": "success"
+    },
+    {
+        "text": "",
+        "switchValue": true,
+        "dropdownOption": "option1",
+        "expectedResult": "error"
+    },
+    {
+        "text": "Valid Text",
+        "switchValue": true,
+        "dropdownOption": null,
+        "expectedResult": "success"
+    }
+]
+

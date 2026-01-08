@@ -1,0 +1,6 @@
+username,password,expectedResult
+csvuser1,pass123,success
+csvuser2,pass456,success
+csvuser3,pass789,success
+invaliduser,wrongpass,error
+
